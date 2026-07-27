@@ -1,9 +1,10 @@
 from django.contrib import admin
-from blog import views
-from django.urls import path
-
-from django.conf.urls.static import static
 from django.conf import settings
+from django.conf.urls.static import static
+from django.urls import path
+from debug_toolbar.toolbar import debug_toolbar_urls
+
+from blog import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -13,4 +14,9 @@ urlpatterns = [
     path('contacts/', views.contacts, name='contacts'),
     path('', views.index, name='index'),
 ]
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += static(
+    settings.MEDIA_URL,
+    document_root=settings.MEDIA_ROOT,
+)
+urlpatterns += debug_toolbar_urls()
