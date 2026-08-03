@@ -7,6 +7,15 @@ from blog.models import Comment, Post, Tag
 def serialize_tag(tag):
     return {
         'title': tag.title,
+        'posts_with_tag': len(
+            Post.objects.filter(tags=tag)
+        ),
+    }
+
+
+def serialize_tag_optimized(tag):
+    return {
+        'title': tag.title,
         'posts_with_tag': tag.posts_count,
     }
 
@@ -40,7 +49,7 @@ def serialize_post_optimized(post):
         'published_at': post.published_at,
         'slug': post.slug,
         'tags': [
-            serialize_tag(tag)
+            serialize_tag_optimized(tag)
             for tag in post.tags.all()
         ],
         'first_tag_title': post.tags.all()[0].title,
@@ -93,7 +102,7 @@ def index(request):
             most_fresh_posts
         ),
         'popular_tags': [
-            serialize_tag(tag)
+            serialize_tag_optimized(tag)
             for tag in most_popular_tags
         ],
     }
@@ -115,10 +124,7 @@ def post_detail(request, slug):
         })
 
     likes = post.likes.all()
-
-    related_tags = post.tags.annotate(
-        posts_count=Count('posts'),
-    )
+    related_tags = post.tags.all()
 
     serialized_post = {
         'title': post.title,
@@ -156,7 +162,7 @@ def post_detail(request, slug):
     context = {
         'post': serialized_post,
         'popular_tags': [
-            serialize_tag(tag)
+            serialize_tag_optimized(tag)
             for tag in most_popular_tags
         ],
         'most_popular_posts': serialize_posts_optimized(
@@ -206,7 +212,7 @@ def tag_filter(request, tag_title):
     context = {
         'tag': tag.title,
         'popular_tags': [
-            serialize_tag(tag)
+            serialize_tag_optimized(tag)
             for tag in most_popular_tags
         ],
         'posts': serialize_posts_optimized(
