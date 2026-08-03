@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Count
 from django.urls import reverse
 
 
@@ -11,12 +12,28 @@ class PostQuerySet(models.QuerySet):
         ).order_by('published_at')
 
 
+class TagQuerySet(models.QuerySet):
+
+    def popular(self):
+        return self.annotate(
+            posts_count=Count('posts'),
+        ).order_by('-posts_count')
+
+
 class Post(models.Model):
-    title = models.CharField('Заголовок', max_length=200)
+    title = models.CharField(
+        'Заголовок',
+        max_length=200,
+    )
     text = models.TextField('Текст')
-    slug = models.SlugField('Название в виде url', max_length=200)
+    slug = models.SlugField(
+        'Название в виде url',
+        max_length=200,
+    )
     image = models.ImageField('Картинка')
-    published_at = models.DateTimeField('Дата и время публикации')
+    published_at = models.DateTimeField(
+        'Дата и время публикации',
+    )
 
     author = models.ForeignKey(
         User,
@@ -42,7 +59,10 @@ class Post(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('post_detail', args={'slug': self.slug})
+        return reverse(
+            'post_detail',
+            args={'slug': self.slug},
+        )
 
     class Meta:
         ordering = ['-published_at']
@@ -56,6 +76,8 @@ class Tag(models.Model):
         max_length=20,
         unique=True,
     )
+
+    objects = TagQuerySet.as_manager()
 
     def __str__(self):
         return self.title
