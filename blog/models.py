@@ -11,6 +11,51 @@ class PostQuerySet(models.QuerySet):
             published_at__year=year,
         ).order_by('published_at')
 
+    def popular(self):
+        return self.annotate(
+            likes_count=Count('likes'),
+        ).order_by('-likes_count')
+
+    def fetch_with_comments_count(self):
+        """Возвращает список постов с количеством комментариев.
+
+        Метод используется в конце цепочки QuerySet, когда запрос уже
+        содержит подсчёт по другой связи, например Count('likes').
+
+        Если подсчитывать лайки и комментарии через два annotate
+        в одном SQL-запросе, Django создаст дополнительные JOIN,
+        строки могут перемножиться, а запрос станет тяжелее.
+
+        Поэтому текущий QuerySet сначала превращается в список,
+        затем комментарии подсчитываются отдельным запросом.
+        """
+        posts = list(self)
+
+        post_ids = [
+            post.id
+            for post in posts
+        ]
+
+        posts_with_comments = self.model.objects.filter(
+            id__in=post_ids,
+        ).annotate(
+            comments_count=Count('comments'),
+        )
+
+        comments_count_by_post_id = dict(
+            posts_with_comments.values_list(
+                'id',
+                'comments_count',
+            )
+        )
+
+        for post in posts:
+            post.comments_count = comments_count_by_post_id[
+                post.id
+            ]
+
+        return posts
+
 
 class TagQuerySet(models.QuerySet):
 
