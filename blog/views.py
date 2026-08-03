@@ -50,12 +50,34 @@ def serialize_post_optimized(post):
 
 
 def index(request):
-    most_popular_posts = Post.objects.prefetch_related(
-        'author',
+    most_popular_posts = list(
+        Post.objects.prefetch_related(
+            'author',
+        ).annotate(
+            likes_count=Count('likes'),
+        ).order_by('-likes_count')[:5]
+    )
+
+    most_popular_posts_ids = [
+        post.id
+        for post in most_popular_posts
+    ]
+
+    posts_with_comments = Post.objects.filter(
+        id__in=most_popular_posts_ids,
     ).annotate(
-        likes_count=Count('likes', distinct=True),
-        comments_count=Count('comments', distinct=True),
-    ).order_by('-likes_count')[:5]
+        comments_count=Count('comments'),
+    )
+
+    comments_count_by_post_id = dict(
+        posts_with_comments.values_list(
+            'id',
+            'comments_count',
+        )
+    )
+
+    for post in most_popular_posts:
+        post.comments_count = comments_count_by_post_id[post.id]
 
     fresh_posts = Post.objects.prefetch_related(
         'author',
