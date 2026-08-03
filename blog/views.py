@@ -168,7 +168,9 @@ def tag_filter(request, tag_title):
 
     most_popular_tags = Tag.objects.popular()[:5]
     most_popular_posts = []
-    related_posts = tag.posts.all()[:20]
+    related_posts = tag.posts.prefetch_related(
+        'author',
+    )[:20]
 
     context = {
         'tag': tag.title,
