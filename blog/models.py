@@ -1,6 +1,14 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
-from django.contrib.auth.models import User
+
+
+class PostQuerySet(models.QuerySet):
+
+    def year(self, year):
+        return self.filter(
+            published_at__year=year,
+        ).order_by('published_at')
 
 
 class Post(models.Model):
@@ -14,16 +22,21 @@ class Post(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        limit_choices_to={'is_staff': True})
+        limit_choices_to={'is_staff': True},
+    )
     likes = models.ManyToManyField(
         User,
         related_name='liked_posts',
         verbose_name='Кто лайкнул',
-        blank=True)
+        blank=True,
+    )
     tags = models.ManyToManyField(
         'Tag',
         related_name='posts',
-        verbose_name='Теги')
+        verbose_name='Теги',
+    )
+
+    objects = PostQuerySet.as_manager()
 
     def __str__(self):
         return self.title
@@ -38,7 +51,11 @@ class Post(models.Model):
 
 
 class Tag(models.Model):
-    title = models.CharField('Тег', max_length=20, unique=True)
+    title = models.CharField(
+        'Тег',
+        max_length=20,
+        unique=True,
+    )
 
     def __str__(self):
         return self.title
@@ -47,7 +64,10 @@ class Tag(models.Model):
         self.title = self.title.lower()
 
     def get_absolute_url(self):
-        return reverse('tag_filter', args={'tag_title': self.slug})
+        return reverse(
+            'tag_filter',
+            args={'tag_title': self.slug},
+        )
 
     class Meta:
         ordering = ['title']
@@ -65,10 +85,13 @@ class Comment(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор')
+        verbose_name='Автор',
+    )
 
     text = models.TextField('Текст комментария')
-    published_at = models.DateTimeField('Дата и время публикации')
+    published_at = models.DateTimeField(
+        'Дата и время публикации',
+    )
 
     def __str__(self):
         return f'{self.author.username} under {self.post.title}'
