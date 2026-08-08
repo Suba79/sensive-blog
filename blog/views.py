@@ -13,6 +13,8 @@ def serialize_tag_optimized(tag):
 
 
 def serialize_post_optimized(post):
+    first_tag = post.tags.first()
+
     return {
         'title': post.title,
         'teaser_text': post.text[:200],
@@ -25,7 +27,7 @@ def serialize_post_optimized(post):
             serialize_tag_optimized(tag)
             for tag in post.tags.all()
         ],
-        'first_tag_title': post.tags.all()[0].title,
+        'first_tag_title': first_tag.title if first_tag else None,
     }
 
 
